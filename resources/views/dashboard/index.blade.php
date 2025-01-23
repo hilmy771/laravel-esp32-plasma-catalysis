@@ -60,7 +60,7 @@
         data: {
             labels: labels,
             datasets: [{
-                label: 'x',
+                label: 'MQ-6',
                 data: data,
                 fill: false,
                 borderColor: 'rgb(0, 163, 0)',
