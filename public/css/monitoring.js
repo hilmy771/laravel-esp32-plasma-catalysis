@@ -11,7 +11,7 @@ let chartData = {
         //     tension: 0.5,
         // },
         {
-            label: 'Gas Value MQ6',
+            label: 'Propane/Butane Value',
             data: [],
             borderColor: '#ab1111',
             backgroundColor: 'rgba(153, 0, 51, 0.2)',
@@ -19,7 +19,7 @@ let chartData = {
             tension: 0.5,
         },
         {
-            label: 'Gas Value MQ8',
+            label: 'Hydrogen Value',
             data: [],
             borderColor: '#32cd32',
             backgroundColor: 'rgba(0, 153, 76, 0.2)',
@@ -66,69 +66,157 @@ parent.style.overflow = "hidden";
 
 document.getElementById('gasChart').style.backgroundColor = '#343a40';
 
-let currentDeviceId = null;
-let interval = null;
+const roomSelect   = document.getElementById('room-select');
+const deviceSelect = document.getElementById('device-select');
+let interval;
 
-function updateChart(deviceId) {
-    if (!deviceId || deviceId !== currentDeviceId) return;
+// Reset dan redraw chart kosong
+function clearChart() {
+    gasChart.data.labels = [];
+    gasChart.data.datasets.forEach(ds => ds.data = []);
+    gasChart.update();
+}
 
-    fetch(`/api/sensor?device_id=${deviceId}`)
-        .then(response => response.json())
+// Fetch & update chart berdasarkan room+device terpilih
+function updateChart() {
+    const roomId   = roomSelect.value;
+    const deviceId = deviceSelect.value;
+
+    // Jangan fetch kalau salah satu dropdown belum dipilih
+    if (!roomId || !deviceId) return;
+
+    fetch(`/api/sensor?room_name=${roomId}&device_id=${deviceId}`)
+        .then(res => res.json())
         .then(data => {
-            let labels = [];
-            // let mq4_values = [];
-            let mq6_values = [];
-            let mq8_values = [];
+            const labels = [];
+            const mq6_values = [];
+            const mq8_values = [];
 
             data.forEach(sensor => {
-                let date = new Date(sensor.created_at);
-                let formattedDate = date.toLocaleString("id-ID", {
+                const d = new Date(sensor.created_at);
+                labels.push(d.toLocaleString("id-ID", {
                     year: "numeric",
                     month: "2-digit",
                     day: "2-digit",
                     hour: "2-digit",
                     minute: "2-digit",
                     second: "2-digit"
-                });
-
-                labels.push(formattedDate);
-                // mq4_values.push(sensor.mq4_value);
+                }));
                 mq6_values.push(sensor.mq6_value);
                 mq8_values.push(sensor.mq8_value);
             });
 
-            gasChart.data.labels = labels;
-            // gasChart.data.datasets[0].data = mq4_values;
-            gasChart.data.datasets[0].data = mq6_values;
-            gasChart.data.datasets[1].data = mq8_values;
+            gasChart.data.labels              = labels;
+            gasChart.data.datasets[0].data    = mq6_values;
+            gasChart.data.datasets[1].data    = mq8_values;
             gasChart.update();
         })
-        .catch(error => console.error('Error fetching data:', error));
+        .catch(err => console.error('Error fetching data:', err));
 }
 
-let deviceSelect = document.getElementById('device-select');
-deviceSelect.addEventListener('change', function () {
-    let deviceId = this.value;
-    currentDeviceId = deviceId;
-
-    gasChart.data.labels = [];
-    gasChart.data.datasets.forEach(dataset => dataset.data = []);
-    gasChart.update();
-
+// Ketika ganti Ruangan → reset chart, hentikan interval, kosongkan device-select dan fetch opsi baru
+roomSelect.addEventListener('change', () => {
+    clearChart();
     if (interval) clearInterval(interval);
 
-    updateChart(deviceId);
+    // kosongkan pilihan perangkat
+    deviceSelect.innerHTML = '<option value="">Pilih Perangkat</option>';
 
-    interval = setInterval(() => {
-        updateChart(deviceId);
-    }, 5000);
+    const roomId = roomSelect.value;
+    if (!roomId) return;
+
+    // fetch device by room
+    fetch(`/devices/by-room/${roomId}`)
+        .then(res => res.json())
+        .then(json => {
+            json.devices.forEach(dev => {
+                const opt = document.createElement('option');
+                opt.value       = dev.id;
+                opt.textContent = dev.name;
+                deviceSelect.appendChild(opt);
+            });
+        })
+        .catch(err => console.error(err));
 });
 
-updateChart(currentDeviceId);
+// Ketika ganti Device → reset chart, hentikan interval, lalu mulai fetch+interval
+deviceSelect.addEventListener('change', () => {
+    clearChart();
+    if (interval) clearInterval(interval);
 
-window.addEventListener("resize", function () {
-    gasChart.resize();
+    // langsung satu kali, lalu interval tiap 5 detik
+    updateChart();
+    interval = setInterval(updateChart, 5000);
 });
+
+// Resize Chart otomatis
+window.addEventListener("resize", () => gasChart.resize());
+
+
+
+// let currentDeviceId = null;
+// let interval = null;
+
+// function updateChart(deviceId) {
+//     if (!deviceId || deviceId !== currentDeviceId) return;
+
+//     fetch(`/api/sensor?device_id=${deviceId}`)
+//         .then(response => response.json())
+//         .then(data => {
+//             let labels = [];
+//             // let mq4_values = [];
+//             let mq6_values = [];
+//             let mq8_values = [];
+
+//             data.forEach(sensor => {
+//                 let date = new Date(sensor.created_at);
+//                 let formattedDate = date.toLocaleString("id-ID", {
+//                     year: "numeric",
+//                     month: "2-digit",
+//                     day: "2-digit",
+//                     hour: "2-digit",
+//                     minute: "2-digit",
+//                     second: "2-digit"
+//                 });
+
+//                 labels.push(formattedDate);
+//                 // mq4_values.push(sensor.mq4_value);
+//                 mq6_values.push(sensor.mq6_value);
+//                 mq8_values.push(sensor.mq8_value);
+//             });
+
+//             gasChart.data.labels = labels;
+//             // gasChart.data.datasets[0].data = mq4_values;
+//             gasChart.data.datasets[0].data = mq6_values;
+//             gasChart.data.datasets[1].data = mq8_values;
+//             gasChart.update();
+//         })
+//         .catch(error => console.error('Error fetching data:', error));
+// }
+
+// let deviceSelect = document.getElementById('device-select');
+// deviceSelect.addEventListener('change', function () {
+//     let deviceId = this.value;
+//     currentDeviceId = deviceId;
+
+//     gasChart.data.labels = [];
+//     gasChart.data.datasets.forEach(dataset => dataset.data = []);
+//     gasChart.update();
+
+//     if (interval) clearInterval(interval);
+
+//     updateChart(deviceId);
+
+//     interval = setInterval(() => {
+//         updateChart(deviceId);
+//     }, 5000);
+// });
+
+// updateChart(currentDeviceId);
+
+// window.addEventListener("resize", function () {
+//     gasChart.resize();
+// });
 
 //Card
 function updateCards(deviceId) {

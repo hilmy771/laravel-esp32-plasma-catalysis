@@ -13,14 +13,22 @@ class DeviceController extends Controller
     public function index()
     {
         $devices = Device::all();
-        return view('devices', compact('devices')); // Mengarah ke devices.blade.php
+
+        // 2) Ambil daftar ruangan unik dari kolom room_name
+        $rooms = Device::select('room_name')
+                        ->distinct()
+                        ->orderBy('room_name')
+                        ->pluck('room_name'); // akan jadi Collection string
+        return view('devices', compact('devices','rooms')); // Mengarah ke devices.blade.php
+
     }
 
 
-    // Menyimpan perangkat baru
+    // Menyimpan perangkat baru 
     public function store(Request $request)
     {
         $request->validate([
+            'room_name' => 'required|string|max:255',
             'name' => 'required|string|max:255',
             'sensors' => 'required|array|min:1', // Wajib pilih minimal 1 sensor
             'sensors.*' => 'in:mq6,mq8' // Pastikan nilai hanya dari daftar ini
@@ -34,6 +42,7 @@ class DeviceController extends Controller
 
         // Simpan ke database
         Device::create([
+            'room_name' => $request->room_name,
             'name' => $request->name,
             'sensors' => json_encode($request->sensors), // Simpan sebagai JSON
             'token' => $token
@@ -56,5 +65,19 @@ class DeviceController extends Controller
         $devices = Device::all();
         return response()->json($devices);
     }
+
+    public function getDevicesByRoom(Request $request)
+    {
+        $request->validate([
+            'room_name' => 'required|string|exists:devices,room_name'
+        ]);
+
+        $devices = Device::where('room_name', $request->room_name)
+                        ->get(['id','name']);
+
+        return response()->json(['devices' => $devices]);
+    }
+
+
 
 }

@@ -147,6 +147,23 @@ canvas {
     border: 1px solid #ffffff;
 }
 
+/* ======= Autofill Styling ======= */
+.form-control:-webkit-autofill {
+    background-color: #3a3a3a !important; /* Warna latar belakang autofill */
+    color: #ffffff !important; /* Warna teks */
+    -webkit-box-shadow: 0 0 0px 1000px #252525 inset !important; /* Menambahkan efek shadow */
+}
+
+.form-control:-webkit-autofill:focus {
+    background-color: #3a3a3a !important; /* Warna latar belakang autofill saat fokus */
+    color: #ffffff !important; /* Warna teks saat fokus */
+    border: 1px solid #007bff; /* Border saat autofill dan fokus */
+}
+
+.form-control:-webkit-autofill::first-line {
+    font-weight: bold; /* Menambahkan tebal pada teks autofill */
+}
+
 /* ======= Buttons ======= */
 .btn-primary {
     background-color: #007bff;

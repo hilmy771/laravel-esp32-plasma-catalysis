@@ -13,18 +13,33 @@
     </div>
 
     <section class="content">
-        <div class="container-fluid">
-            <!-- Pilih Perangkat -->
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <label for="device-select">Pilih Perangkat:</label>
-                        <select id="device-select" class="form-control">
-                            <option value="">Pilih Perangkat</option>
-                            @foreach ($devices as $device)
-                                <option value="{{ $device->id }}">{{ $device->name }}</option>
-                            @endforeach
-                        </select>
+    <div class="row mb-3">
+            <!-- Pilih Ruangan -->
+            <div class="col-sm-6 col-md-4">
+                <div class="form-group">
+                <label for="room-select" class="form-label">Pilih Ruangan:</label>
+                <select id="room-select" class="form-control">
+                    <option value="">Pilih Ruangan</option>
+                    @foreach($rooms as $room)
+                    <option value="{{ $room }}">{{ $room }}</option>
+                    @endforeach
+                </select>
                 </div>
+            </div>
+            <!-- Pilih Perangkat -->
+            <div class="col-sm-6 col-md-4">
+                <div class="form-group">
+                    <label for="device_id">Pilih Perangkat:</label>
+                    <select name="device_id" class="form-control" onchange="this.form.submit()">
+                        <option value="">Pilih Perangkat</option>
+                        @foreach ($devices as $device)
+                            <option value="{{ $device->device_id }}" {{ $selectedDevice == $device->device_id ? 'selected' : '' }}>
+                                {{ $device->device_id }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
             </div>
             <div class="row">
                 <div class="col-md-12">

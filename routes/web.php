@@ -22,11 +22,13 @@ use App\Http\Controllers\UsersController;
 
 Route::get('/sensor-data', [SensorController::class, 'getAllSensorData'])->name('sensor.data');
 
-Route::get('/devices', [DeviceController::class, 'devices'])->name('devices');
+// Route::get('/devices', [DeviceController::class, 'devices'])->name('devices');
 Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
-Route::get('/devices', [DeviceController::class, 'showAllDevices'])->name('devices.devices'); // Tambahkan jika belum ada
+// Route::get('/devices', [DeviceController::class, 'showAllDevices'])->name('devices.devices'); // Tambahkan jika belum ada
 Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
+Route::get('/devices/by-room', [App\Http\Controllers\Api\DeviceController::class, 'getDevicesByRoom']);
 Route::post('/devices/generate-token', [DeviceController::class, 'generateToken'])->name('devices.generateToken');
+
 
 Route::resource('devices', DeviceController::class);
 
@@ -48,6 +50,7 @@ Route::view('/contact', 'contact');
 // Route::get('/', function () {
 //     return view('welcome');
 // });
+
 
 Route::get('/login', fn () => view('auth.login'))->name('login');
 route::post('/login', [AuthController::class, 'login']);

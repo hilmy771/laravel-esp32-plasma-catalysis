@@ -12,50 +12,75 @@ use Illuminate\Http\Request;
 class SensorController extends Controller
 {
     // Mendapatkan data terbaru dari device tertentu untuk Dashboard
-    public function index(Request $request)
+        public function index(Request $request)
     {
+        // 1) Validasi input
         $request->validate([
-            'device_id' => 'required|exists:devices,id'
+            'room_name' => 'required|string|exists:devices,room_name',
+            'device_id' => 'required|exists:devices,id',
+        ], [
+            'room_name.required' => 'Nama ruangan wajib diisi.',
+            'room_name.exists'   => 'Ruangan tidak ditemukan.',
+            'device_id.required' => 'Perangkat wajib dipilih.',
+            'device_id.exists'   => 'Perangkat tidak valid.',
         ]);
 
-        $sensorData = SensorData::where('device_id', $request->device_id)
+        // 2) Bangun query dengan kedua filter
+        $query = SensorData::query()
+            // pastikan device milik room_name yang diminta
+            ->whereHas('device', function($q) use ($request) {
+                $q->where('room_name', $request->room_name);
+            })
+            ->where('device_id', $request->device_id)
             ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
+            ->take(5);
 
-            return response()->json($sensorData->map(function ($data) {
-                return [
-                    // 'mq4_value' => $data->mq4_value,
-                    'mq6_value' => $data->mq6_value,
-                    'mq8_value' => $data->mq8_value,
-                    'created_at' => $data->created_at->toISOString(), // Format ISO 8601 (standar JavaScript)
-                ];
-            }));
+        // 3) Ambil data
+        $sensorData = $query->get();
+
+        // 4) Format dan kembalikan JSON
+        return response()->json(
+            $sensorData->map(fn($data) => [
+                'mq6_value'  => $data->mq6_value,
+                'mq8_value'  => $data->mq8_value,
+                'created_at' => $data->created_at->toISOString(),
+            ])
+        );
     }
 
     // Menampilkan semua data sensor untuk halaman Data Sensor
     public function getAllSensorData(Request $request)
     {
-        $deviceId = $request->input('device_id');
-        $date = $request->input('date');
-
-        // Query sensor data dengan filter perangkat dan tanggal
         $query = SensorData::with('device');
 
-        if ($deviceId) {
-            $query->where('device_id', $deviceId);
+        // Filter ruangan
+        if ($request->filled('room_name')) {
+            $query->whereHas('device', function ($q) use ($request) {
+                $q->where('room_name', $request->room_name);
+            });
         }
 
-        if ($date) {
-            $query->whereDate('created_at', $date);
+        // Filter perangkat
+        if ($request->filled('device_id')) {
+            $query->where('device_id', $request->device_id);
         }
 
-        // Menggunakan pagination dengan 10 data per halaman
-        $sensorData = $query->orderBy('created_at', 'desc')->paginate(10);
-        $devices = Device::all();
+        // Filter tanggal
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
 
-        return view('sensor_data', compact('sensorData', 'devices'));
+        $sensorData = $query->orderByDesc('created_at')->paginate(20);
+
+        // Ambil semua ruangan unik dan perangkat yang tersedia
+        $rooms = Device::distinct()->pluck('room_name');
+        $devices = Device::when($request->room_name, function ($q) use ($request) {
+            return $q->where('room_name', $request->room_name);
+        })->get();
+
+        return view('sensor_data', compact('sensorData', 'devices', 'rooms'));
     }
+
 
     // Menyimpan data sensor ke dalam database
     public function store(Request $request)

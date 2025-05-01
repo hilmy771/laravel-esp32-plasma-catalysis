@@ -31,6 +31,9 @@ Route::get('/sensor', [SensorController::class, 'index']);
 
 Route::get('/devices', [DeviceController::class, 'index']);
 
+Route::get('/devices/by-room', [DeviceController::class, 'getDevicesByRoom']);
+
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });

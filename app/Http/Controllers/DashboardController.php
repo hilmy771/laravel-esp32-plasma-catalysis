@@ -11,12 +11,27 @@ use App\Models\Device;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $devices = Device::all();
-        $sensorData = SensorData::latest()->take(10)->get(); // Ambil 10 data terbaru
+        $rooms = Device::distinct()->pluck('room_name');
 
-        return view('dashboard', compact('devices', 'sensorData'));
+        $selectedRoom = $request->input('room_name');
+        $selectedDevice = $request->input('device_id');
+
+        $devices = collect(); // default kosong
+
+        if ($selectedRoom) {
+            $devices = Device::where('room_name', $selectedRoom)->get();
+        }
+
+        // Ambil data sensor jika perangkat dipilih
+        $sensorData = collect();
+
+        if ($selectedDevice) {
+            $sensorData = SensorData::where('device_id', $selectedDevice)->get();
+        }
+
+        return view('dashboard', compact('rooms', 'devices', 'sensorData', 'selectedRoom', 'selectedDevice'));
     }
 
     public function checkGasLevel()
