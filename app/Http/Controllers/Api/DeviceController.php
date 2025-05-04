@@ -74,8 +74,10 @@ class DeviceController extends Controller
 
         $devices = Device::where('room_name', $request->room_name)
                         ->get(['id','name']);
+        // $devices = Device::where('room_name', $roomName)->get();
 
         return response()->json(['devices' => $devices]);
+        // return response()->json($devices);
     }
 
 

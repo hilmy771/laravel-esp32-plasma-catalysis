@@ -12,35 +12,48 @@
         </div>
     </div>
 
-    <section class="content">
+<section class="content">
+<form method="GET" action="{{ route('dashboard') }}">
     <div class="row mb-3">
             <!-- Pilih Ruangan -->
             <div class="col-sm-6 col-md-4">
                 <div class="form-group">
-                <label for="room-select" class="form-label">Pilih Ruangan:</label>
-                <select id="room-select" class="form-control">
+                <label for="room_name">Pilih Ruangan:</label>
+                <select id="room-select" name="room_name" class="form-control" onchange="this.form.submit()">
+                    <option value="">Pilih Ruangan</option>
+                    @foreach ($rooms as $room)
+                        <option value="{{ $room }}" {{ $selectedRoom == $room ? 'selected' : '' }}>
+                            {{ $room }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>  
+                <!-- <select id="room-select" class="form-control">
                     <option value="">Pilih Ruangan</option>
                     @foreach($rooms as $room)
                     <option value="{{ $room }}">{{ $room }}</option>
                     @endforeach
-                </select>
-                </div>
-            </div>
+                </select> -->
+
             <!-- Pilih Perangkat -->
             <div class="col-sm-6 col-md-4">
                 <div class="form-group">
                     <label for="device_id">Pilih Perangkat:</label>
-                    <select name="device_id" class="form-control" onchange="this.form.submit()">
-                        <option value="">Pilih Perangkat</option>
-                        @foreach ($devices as $device)
-                            <option value="{{ $device->device_id }}" {{ $selectedDevice == $device->device_id ? 'selected' : '' }}>
-                                {{ $device->device_id }}
-                            </option>
-                        @endforeach
+                    <select id="device-select" name="device_id" class="form-control">
+                    <option value="">Pilih Perangkat</option>
+                    @foreach ($devices as $device)
+                        <option value="{{ $device->id }}" {{ $selectedDevice == $device->id ? 'selected' : '' }}>
+                            {{ $device->name }}
+                        </option>
+                    @endforeach
                     </select>
                 </div>
             </div>
-            </div>
+        </div>
+    </form>
+
+
             <div class="row">
                 <div class="col-md-12">
                     <div class="card">

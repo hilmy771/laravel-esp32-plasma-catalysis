@@ -26,7 +26,7 @@ Route::get('/sensor-data', [SensorController::class, 'getAllSensorData'])->name(
 Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
 // Route::get('/devices', [DeviceController::class, 'showAllDevices'])->name('devices.devices'); // Tambahkan jika belum ada
 Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
-Route::get('/devices/by-room', [App\Http\Controllers\Api\DeviceController::class, 'getDevicesByRoom']);
+Route::get('/devices/by-room', [DeviceController::class, 'getDevicesByRoom'])->name('devices.byRoom');
 Route::post('/devices/generate-token', [DeviceController::class, 'generateToken'])->name('devices.generateToken');
 
 
@@ -58,7 +58,7 @@ route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', fn () => view('auth.register'))->name('register');
 route::post('/register', [AuthController::class, 'register']);
 
-Route::get('/', [DashboardController::class, 'index']);
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/logout', [AuthController::class, 'logout']);
 
 // Route::get('/', function () {

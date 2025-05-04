@@ -25,6 +25,8 @@ Route::post('/sensor', [SensorController::class, 'store']);
 
 // routes/api.php
 
+Route::get('/sensor-data', [SensorController::class, 'index']);
+
 Route::post('/gas-alert', [DashboardController::class, 'store']);
 
 Route::get('/sensor', [SensorController::class, 'index']);
