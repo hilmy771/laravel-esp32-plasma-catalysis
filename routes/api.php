@@ -33,6 +33,11 @@ Route::get('/sensor', [SensorController::class, 'index']);
 
 Route::get('/devices', [DeviceController::class, 'index']);
 
+Route::get('/check-gas-alerts', [SensorController::class, 'checkGasLevel']);
+
+Route::get('/gas-alerts', [SensorController::class, 'getRecentGasAlerts']);
+
+
 Route::get('/devices/by-room', [DeviceController::class, 'getDevicesByRoom']);
 
 

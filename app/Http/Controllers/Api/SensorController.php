@@ -122,19 +122,25 @@ class SensorController extends Controller
             $sensorValue = $sensorData->$sensor; // Gunakan $sensorData yang baru dibuat
             if ($sensorValue >= $threshold) {
                 $sensorName = $sensorNames[$sensor] ?? $sensor;
-                $alerts[] = "⚠️ *Peringatan!* Sensor *{$sensorName}* mendeteksi gas berbahaya! \n🔥 Level: *{$sensorValue}* ppm 🚨";
+                $alerts[] = "⚠️ *Peringatan!* Sensor *{$sensorName}* mendeteksi gas berbahaya! \n🔥";
             }
         }
 
+        $alertMessage = null;
+
         if (!empty($alerts)) {
-            $message = implode("\n\n", $alerts);
-
-            // Kirim event untuk notifikasi otomatis
-            event(new GasThresholdExceeded($message));
-
+            $alertMessage = implode("\n\n", $alerts);
+        
+            // Kirim event dan WhatsApp
+            event(new GasThresholdExceeded($alertMessage));
+        
             $whatsappService = new WhatsAppService();
-            $whatsappService->sendGasAlert($message);
+            $whatsappService->sendGasAlert($alertMessage);
         }
+        
+        // Update the sensor data with alert (if any)
+        $sensorData->gas_alert = $alertMessage;
+        $sensorData->save();
 
         return response()->json([
             'message' => 'Data berhasil disimpan dan diperiksa',
@@ -150,7 +156,6 @@ class SensorController extends Controller
     }
 
     $thresholds = [
-        // 'mq4_value' => 300,
         'mq6_value' => 300,
         'mq8_value' => 300
     ];
@@ -161,24 +166,34 @@ class SensorController extends Controller
     ];
 
     $alerts = [];
+    $alertTriggered = false;
 
     foreach ($thresholds as $sensor => $threshold) {
         $sensorValue = $latestSensorData->$sensor ?? 0;
         if ($sensorValue >= $threshold) {
             $sensorName = $sensorNames[$sensor] ?? $sensor;
-            $alerts[] = "⚠️ *Peringatan!* Sensor *{$sensorName}* mendeteksi gas berbahaya! \n🔥 Level: *{$sensorValue}* ppm 🚨";
+            $alerts[] = "⚠️ *Peringatan!* Sensor *{$sensorName}* mendeteksi gas berbahaya! \n🔥";
+            $alertTriggered = true;
         }
     }
 
-    if (!empty($alerts)) {
-        $message = implode("\n\n", $alerts);
-        event(new GasThresholdExceeded($message)); // 🔥 Trigger event
-    }
+    // Get latest 5 alerts for dropdown (not null)
+    $recentAlerts = SensorData::whereNotNull('gas_alert')
+        ->orderBy('created_at', 'desc')
+        ->limit(5)
+        ->pluck('gas_alert', 'created_at')
+        ->map(function ($message, $timestamp) {
+            return [
+                'message' => $message . ' - ' . \Carbon\Carbon::parse($timestamp)->diffForHumans()
+            ];
+        })
+        ->values();
 
     return response()->json([
-        // 'mq4_value' => $latestSensorData->mq4_value,
         'mq6_value' => $latestSensorData->mq6_value,
-        'mq8_value' => $latestSensorData->mq8_value
+        'mq8_value' => $latestSensorData->mq8_value,
+        'alertTriggered' => $alertTriggered,
+        'alerts' => $recentAlerts
     ]);
-    }
+}
 }

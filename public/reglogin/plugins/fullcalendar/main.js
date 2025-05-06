@@ -5557,7 +5557,7 @@ var FullCalendar = (function (exports) {
             var customContentInfo = this.customContentInfo; // only populated if using non-[p]react node(s)
             var innerContent = this.getInnerContent();
             var meta = this.getContentMeta(innerContent);
-            // initial run, or content-type changing? (from vue -> react for example)
+            // initial run, or  changing? (from vue -> react for example)
             if (!customContentInfo || customContentInfo.contentKey !== meta.contentKey) {
                 // clearing old value
                 if (customContentInfo) {

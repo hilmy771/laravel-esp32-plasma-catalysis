@@ -14,6 +14,22 @@
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
         @auth
+            <!-- Notification Icon -->
+
+            <li class="nav-item dropdown" id="push-notification-dropdown">
+                <a class="nav-link" data-toggle="dropdown" href="#">
+                    <i class="far fa-bell"></i>
+                    <span class="badge badge-danger navbar-badge" id="alert-badge-count" style="display:none;">0</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right" id="alert-dropdown-menu" style="max-width: 300px; max-height: 300px; overflow-y: auto;">
+                    <span class="dropdown-header">Gas Alerts</span>
+                    <div class="dropdown-divider"></div>
+                    <div id="alert-list" class="px-3 text-sm text-danger">No active alerts</div>
+                    <div class="dropdown-divider"></div>
+                </div>
+
+            </li>
+
             <li class="nav-item">
                 <button class="logout-button" onclick="confirmLogout(event)">
                     <i class="fas fa-power-off"></i>
@@ -30,6 +46,25 @@
                 }
             }
             </script>
+
+            <script>
+                function showAlertHistory() {
+                    let history = alertHistory;
+
+                    // If using localStorage, load it from there:
+                    const saved = localStorage.getItem("alertHistory");
+                    if (saved) history = JSON.parse(saved);
+
+                    if (!history.length) {
+                        alert("No alert history found.");
+                        return;
+                    }
+
+                    const historyText = history.join('\n\n');
+                    alert("📜 Gas Alert History:\n\n" + historyText);
+                }
+            </script>
+
 
         @else
             <!-- Jika user belum login -->

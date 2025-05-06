@@ -43,7 +43,7 @@ class CheckGasLevel extends Command
             $sensorValue = $latestSensorData->$sensor ?? 0;
             if ($sensorValue >= $threshold) {
                 $sensorName = $sensorNames[$sensor] ?? $sensor;
-                $alerts[] = "⚠️ *Peringatan!* Sensor *{$sensorName}* mendeteksi gas berbahaya! \n🔥 Level: *{$sensorValue}* ppm 🚨";
+                $alerts[] = "⚠️Sensor *{$sensorName}* mendeteksi gas! \n🔥 Level: *{$sensorValue}* ppm 🚨";
             }
         }
 

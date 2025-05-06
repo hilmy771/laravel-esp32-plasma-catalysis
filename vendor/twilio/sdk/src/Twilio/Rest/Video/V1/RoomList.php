@@ -71,12 +71,16 @@ class RoomList extends ListResource
                 $options['maxParticipants'],
             'RecordParticipantsOnConnect' =>
                 Serialize::booleanToString($options['recordParticipantsOnConnect']),
+            'TranscribeParticipantsOnConnect' =>
+                Serialize::booleanToString($options['transcribeParticipantsOnConnect']),
             'VideoCodecs' =>
                 $options['videoCodecs'],
             'MediaRegion' =>
                 $options['mediaRegion'],
             'RecordingRules' =>
                 Serialize::jsonObject($options['recordingRules']),
+            'TranscriptionsConfiguration' =>
+                Serialize::jsonObject($options['transcriptionsConfiguration']),
             'AudioOnly' =>
                 Serialize::booleanToString($options['audioOnly']),
             'MaxParticipantDuration' =>
@@ -89,7 +93,7 @@ class RoomList extends ListResource
                 Serialize::booleanToString($options['largeRoom']),
         ]);
 
-        $headers = Values::of(['Content-Type' => 'application/x-www-form-urlencoded' ]);
+        $headers = Values::of(['Content-Type' => 'application/x-www-form-urlencoded', 'Accept' => 'application/json' ]);
         $payload = $this->version->create('POST', $this->uri, [], $data, $headers);
 
         return new RoomInstance(
@@ -180,7 +184,8 @@ class RoomList extends ListResource
             'PageSize' => $pageSize,
         ]);
 
-        $response = $this->version->page('GET', $this->uri, $params);
+        $headers = Values::of(['Content-Type' => 'application/x-www-form-urlencoded', 'Accept' => 'application/json']);
+        $response = $this->version->page('GET', $this->uri, $params, [], $headers);
 
         return new RoomPage($this->version, $response, $this->solution);
     }

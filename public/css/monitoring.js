@@ -331,6 +331,7 @@
 // updateCards(currentDeviceId);
 
 
+let alertHistory = [];
 
 let chartData = {
     labels: [],
@@ -481,5 +482,87 @@ deviceSelect.addEventListener("change", () => {
         // updateCards(currentDeviceId);
     }, 5000);
 });
+
+
+// Function to periodically check gas levels
+function checkGasAlerts() {
+    fetch('/api/check-gas-alerts')
+        .then(response => response.json())
+        .then(data => {
+            // Push notification panel
+            updatePushNotificationPanel(data.alerts || []);
+
+            // Gas popup
+            if (data.alertTriggered) {
+                const timestamp = new Date().toLocaleString('id-ID');
+                const alertMessage = `🚨 [${timestamp}] MQ6: ${data.mq6_value} ppm, MQ8: ${data.mq8_value} ppm`;
+
+                // Add to alert history
+                alertHistory.push(alertMessage);
+
+                // Optionally save in localStorage (optional)
+                localStorage.setItem("alertHistory", JSON.stringify(alertHistory));
+
+                // Show popup
+                showGasAlertPopup(data.mq6_value, data.mq8_value);
+            }
+        })
+        .catch(error => console.error('Error checking gas level:', error));
+}
+
+
+
+// Function to show the popup
+function showGasAlertPopup(mq6Value, mq8Value) {
+    const message = `
+        ⚠️ Gas Level Alert! ⚠️
+        Propane/Butane Gas (MQ6): ${mq6Value} ppm
+        Hydrogen Gas (MQ8): ${mq8Value} ppm
+        Please take appropriate action. 🚨
+    `;
+    let proceed = confirm(message);
+
+}
+
+function updatePushNotificationPanel(alerts) {
+    const badge = document.getElementById('alert-badge-count');
+    const list = document.getElementById('alert-list');
+    list.innerHTML = '';
+
+    // Get dismissed alert messages from localStorage
+    const dismissedAlerts = JSON.parse(localStorage.getItem("dismissedAlerts")) || [];
+
+    const activeAlerts = alerts.filter(alert => !dismissedAlerts.includes(alert.message));
+
+    if (activeAlerts.length === 0) {
+        badge.style.display = 'none';
+        list.innerHTML = '<div class="text-sm text-muted">No active alerts</div>';
+        return;
+    }
+
+    badge.textContent = activeAlerts.length;
+    badge.style.display = 'inline';
+  
+    activeAlerts.forEach(alert => {
+        const alertItem = document.createElement('div');
+        alertItem.className = 'dropdown-item text-danger alert-item';
+        alertItem.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${alert.message}`;
+        
+        // Add click handler to dismiss alert
+        alertItem.addEventListener("click", () => {
+            dismissedAlerts.push(alert.message);
+            localStorage.setItem("dismissedAlerts", JSON.stringify(dismissedAlerts));
+            updatePushNotificationPanel(alerts); // re-render
+        });
+
+
+
+        list.appendChild(alertItem);
+    });
+  }
+
+// Check gas level periodically (every 5 seconds)
+setInterval(checkGasAlerts, 5000);  // 5 seconds interval
+
 
 window.addEventListener("resize", () => gasChart.resize());
