@@ -122,7 +122,7 @@ class SensorController extends Controller
             $sensorValue = $sensorData->$sensor; // Gunakan $sensorData yang baru dibuat
             if ($sensorValue >= $threshold) {
                 $sensorName = $sensorNames[$sensor] ?? $sensor;
-                $alerts[] = "⚠️ *Peringatan!* Sensor *{$sensorName}* mendeteksi gas berbahaya! \n🔥";
+                $alerts[] = "Gas berbahaya terdeteksi oleh sensor {$sensorName}.";
             }
         }
 
@@ -172,10 +172,14 @@ class SensorController extends Controller
         $sensorValue = $latestSensorData->$sensor ?? 0;
         if ($sensorValue >= $threshold) {
             $sensorName = $sensorNames[$sensor] ?? $sensor;
-            $alerts[] = "⚠️ *Peringatan!* Sensor *{$sensorName}* mendeteksi gas berbahaya! \n🔥";
+            $alerts[] = [
+                'message' => "Gas berbahaya terdeteksi oleh sensor {$sensorName}.",
+                'timestamp' => now()->toDateTimeString(),
+            ];
             $alertTriggered = true;
         }
     }
+    
 
     // Get latest 5 alerts for dropdown (not null)
     $recentAlerts = SensorData::whereNotNull('gas_alert')
@@ -184,16 +188,17 @@ class SensorController extends Controller
         ->pluck('gas_alert', 'created_at')
         ->map(function ($message, $timestamp) {
             return [
-                'message' => $message . ' - ' . \Carbon\Carbon::parse($timestamp)->diffForHumans()
+                'message' => $message,
+                'timestamp' => \Carbon\Carbon::parse($timestamp)->toDateTimeString()
             ];
         })
         ->values();
 
-    return response()->json([
-        'mq6_value' => $latestSensorData->mq6_value,
-        'mq8_value' => $latestSensorData->mq8_value,
-        'alertTriggered' => $alertTriggered,
-        'alerts' => $recentAlerts
-    ]);
+        return response()->json([
+            'alerts' => $alerts,
+            'alertTriggered' => $alertTriggered,
+            'mq6_value' => $latestSensorData->mq6_value,
+            'mq8_value' => $latestSensorData->mq8_value,
+        ]);
 }
 }
