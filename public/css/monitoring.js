@@ -1,4 +1,3 @@
-
 let alertHistory = [];
 
 let chartData = {
@@ -50,7 +49,7 @@ const gasChart = new Chart(ctx, {
 
 document.getElementById('gasChart').style.backgroundColor = '#343a40';
 
-const roomSelect   = document.getElementById('room-select');
+const roomSelect = document.getElementById('room-select');
 const deviceSelect = document.getElementById('device-select');
 let currentDeviceId = null;
 let interval = null;
@@ -62,7 +61,7 @@ function clearChart() {
 }
 
 function updateChart() {
-    const roomId   = roomSelect.value;
+    const roomId = roomSelect.value;
     const deviceId = deviceSelect.value;
 
     if (!roomId || !deviceId) return;
@@ -89,7 +88,6 @@ function updateChart() {
             gasChart.data.datasets[1].data = mq8_values.reverse();
             gasChart.update();
 
-            // === Update Sensor Cards (ambil data terakhir) ===
             if (data.length > 0) {
                 const latest = data[0];
                 document.getElementById("mq6-value").textContent = latest.mq6_value;
@@ -98,21 +96,6 @@ function updateChart() {
         })
         .catch(err => console.error('Error fetching data:', err));
 }
-
-// function updateCards(deviceId) {
-//     if (!deviceId) return;
-
-//     fetch(`/api/sensor?device_id=${deviceId}`)
-//         .then(response => response.json())
-//         .then(data => {
-//             if (data.length > 0) {
-//                 let latestData = data[data.length - 1];
-//                 document.getElementById("mq6-value").textContent = latestData.mq6_value;
-//                 document.getElementById("mq8-value").textContent = latestData.mq8_value;
-//             }
-//         })
-//         .catch(error => console.error("Error fetching data:", error));
-// }
 
 roomSelect.addEventListener("change", () => {
     clearChart();
@@ -143,12 +126,13 @@ deviceSelect.addEventListener("change", () => {
     currentDeviceId = deviceSelect.value;
 
     updateChart();
-    // updateCards(currentDeviceId);
 
-    interval = setInterval(() => {
-        updateChart();
-        // updateCards(currentDeviceId);
-    }, 5000);
+    // Start checking for gas alerts only after a device is selected
+    if (currentDeviceId) {
+        interval = setInterval(() => {
+            checkGasAlerts();
+        }, 5000);
+    }
 });
 
 let lastPopupMessage = null;
@@ -172,7 +156,6 @@ function getAlertId(message) {
     return message.trim(); // Remove timestamp — use the raw message only
 }
 
-
 function checkGasAlerts() {
     fetch('/api/check-gas-alerts')
         .then(response => response.json())
@@ -195,7 +178,6 @@ function checkGasAlerts() {
             const timestamp = new Date().toLocaleString('id-ID');
             const newAlertMessages = alerts.map(alert => `[${timestamp}] ${alert.message}`);
 
-
             const undismissedNewAlerts = newAlertMessages.filter(msg => {
                 const alertId = getAlertId(msg);
                 return !dismissedAlerts.includes(alertId);
@@ -204,7 +186,7 @@ function checkGasAlerts() {
             const mergedAlerts = [...new Set([...existingAlerts, ...undismissedNewAlerts])];
 
             const cleanedAlerts = mergedAlerts.filter(msg => {
-                const alertId = getAlertId(msg); 
+                const alertId = getAlertId(msg);
                 return !dismissedAlerts.includes(alertId);
             });
 
@@ -215,18 +197,17 @@ function checkGasAlerts() {
 
             localStorage.setItem("activePushAlerts", JSON.stringify(cleanedAlerts));
 
-            updatePushNotificationPanel(activeAlerts);  // ✅ after defining
+            updatePushNotificationPanel(activeAlerts);
 
-            const alertMessage = `MQ6: ${mq6_value} ppm, MQ8: ${mq8_value} ppm`;
-            if (alertTriggered && activeAlerts.length > 0 && alertMessage !== lastPopupMessage) {
+            // Only show popup if a device is selected and the alert message is new
+            if (currentDeviceId && alertTriggered && activeAlerts.length > 0 && `Propane/Butane: ${mq6_value} ppm, Hydrogen: ${mq8_value} ppm` !== lastPopupMessage) {
                 const timestamp = new Date().toLocaleString('id-ID');
-                alertHistory.push(`[${timestamp}] ${alertMessage}`);
+                alertHistory.push(`[${timestamp}] Propane/Butane: ${mq6_value} ppm, Hydrogen: ${mq8_value} ppm`);
                 localStorage.setItem("alertHistory", JSON.stringify(alertHistory));
 
-                showPopup(alertMessage);
-                lastPopupMessage = alertMessage;
+                showPopup(`Propane/Butane: ${mq6_value} ppm, Hydrogen: ${mq8_value} ppm`);
+                lastPopupMessage = `Propane/Butane: ${mq6_value} ppm, Hydrogen: ${mq8_value} ppm`;
             }
-
         })
         .catch(error => console.error('Error checking gas level:', error));
 }
@@ -247,6 +228,11 @@ function updatePushNotificationPanel(alerts) {
 
     badge.textContent = activeAlerts.length;
     badge.style.display = 'inline';
+
+    badge.style.transform = 'scale(1.4)';
+    setTimeout(() => {
+        badge.style.transform = 'scale(1)';
+    }, 200);
 
     activeAlerts.forEach(alert => {
         const alertItem = document.createElement('div');
@@ -275,9 +261,6 @@ function clearAllAlerts() {
     localStorage.setItem("dismissedAlerts", JSON.stringify([...new Set(updatedDismissed)]));
     updatePushNotificationPanel([]); // Re-render with no alerts
 }
-
-// Periodic check every 5 seconds
-setInterval(checkGasAlerts, 5000);
 
 // Optional: Resize chart on window resize
 window.addEventListener("resize", () => gasChart.resize());

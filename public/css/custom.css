@@ -53,6 +53,11 @@ body.login-page::before {
     background-color: #dc3545 !important; /* Red notification badge */
 }
 
+    
+#alert-badge-count {
+    transition: transform 0.2s ease;
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
 
 /* ======= Sidebar Customization ======= */
 .main-sidebar {
@@ -277,6 +282,29 @@ th {
         border: 2px solid #32cd32;
     }
 
+}
+
+.gas-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    background: #ff4d4d;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    font-size: 16px;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.gas-popup.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.hidden {
+    display: none;
 }
 
 .logout-button {

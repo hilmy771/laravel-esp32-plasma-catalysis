@@ -122,7 +122,7 @@ class SensorController extends Controller
             $sensorValue = $sensorData->$sensor; // Gunakan $sensorData yang baru dibuat
             if ($sensorValue >= $threshold) {
                 $sensorName = $sensorNames[$sensor] ?? $sensor;
-                $alerts[] = "Gas berbahaya terdeteksi oleh sensor {$sensorName}.";
+                $alerts[] = "Gas {$sensorName} Terdeteksi.";
             }
         }
 
@@ -173,7 +173,7 @@ class SensorController extends Controller
         if ($sensorValue >= $threshold) {
             $sensorName = $sensorNames[$sensor] ?? $sensor;
             $alerts[] = [
-                'message' => "Gas berbahaya terdeteksi oleh sensor {$sensorName}.",
+                'message' => "Gas {$sensorName} Terdeteksi.",
                 'timestamp' => now()->toDateTimeString(),
             ];
             $alertTriggered = true;

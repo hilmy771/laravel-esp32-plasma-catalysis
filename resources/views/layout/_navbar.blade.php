@@ -4,31 +4,6 @@
     <span id="gasPopupMessage"></span>
 </div>
 
-<style>
-.gas-popup {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 9999;
-    background: #ff4d4d;
-    color: white;
-    padding: 16px 24px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    font-size: 16px;
-    opacity: 0;
-    transform: translateY(-20px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.gas-popup.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-.hidden {
-    display: none;
-}
-</style>
-
 <!-- Main Navbar -->
 <nav class="main-header navbar navbar-expand navbar-dark">
     <!-- Left navbar links -->
@@ -55,11 +30,12 @@
                     <i class="far fa-bell"></i>
                     <span class="badge badge-danger navbar-badge" id="alert-badge-count" style="display:none;">0</span>
                 </a>
-                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right" id="alert-dropdown-menu" style="max-width: 300px; max-height: 300px; overflow-y: auto;">
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right" id="alert-dropdown-menu" style="max-width: 420px; max-height: 300px; overflow-y: auto;">
                     <span class="dropdown-header">Gas Alerts</span>
                     <div class="dropdown-divider"></div>
-                    <div id="alert-list" class="px-3 text-sm text-danger">No active alerts</div>
-                    <div class="dropdown-divider"></div>
+                    <div id="alert-list" class="px-3 py-2 text-sm">
+                        <div class="text-muted text-center">No active alerts</div>
+                    </div>
 
                      <!-- 🔴 Clear All Button -->
                     <div class="dropdown-item text-center">
