@@ -49,7 +49,7 @@ const gasChart = new Chart(ctx, {
 
 document.getElementById('gasChart').style.backgroundColor = '#343a40';
 
-const roomSelect = document.getElementById('room-select');
+const roomSelect   = document.getElementById('room-select');
 const deviceSelect = document.getElementById('device-select');
 let currentDeviceId = null;
 let interval = null;
@@ -60,41 +60,41 @@ function clearChart() {
     gasChart.update();
 }
 
-function updateChart() {
-    const roomId = roomSelect.value;
+async function updateChart() {
+    const roomId   = roomSelect.value;
     const deviceId = deviceSelect.value;
 
     if (!roomId || !deviceId) return;
 
-    fetch(`/api/sensor?room_name=${roomId}&device_id=${deviceId}`)
-        .then(res => res.json())
-        .then(data => {
+    try {
+        const res = await fetch(`/api/sensor?room_name=${roomId}&device_id=${deviceId}&t=${Date.now()}`);
+        const data = await res.json();
 
-            data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-            const labels = [];
-            const mq6_values = [];
-            const mq8_values = [];
+        const labels = [], mq6_values = [], mq8_values = [];
 
-            data.forEach(sensor => {
-                const d = new Date(sensor.created_at);
-                labels.push(d.toLocaleString("id-ID"));
-                mq6_values.push(sensor.mq6_value);
-                mq8_values.push(sensor.mq8_value);
-            });
+        data.forEach(sensor => {
+            const d = new Date(sensor.created_at);
+            labels.push(d.toLocaleString("id-ID"));
+            mq6_values.push(sensor.mq6_value ?? null);
+            mq8_values.push(sensor.mq8_value ?? null);
+        });
 
-            gasChart.data.labels = labels.reverse();
-            gasChart.data.datasets[0].data = mq6_values.reverse();
-            gasChart.data.datasets[1].data = mq8_values.reverse();
-            gasChart.update();
+        gasChart.data.labels = labels.reverse();
+        gasChart.data.datasets[0].data = mq6_values.reverse();
+        gasChart.data.datasets[1].data = mq8_values.reverse();
+        gasChart.update();
 
-            if (data.length > 0) {
-                const latest = data[0];
-                document.getElementById("mq6-value").textContent = latest.mq6_value;
-                document.getElementById("mq8-value").textContent = latest.mq8_value;
-            }
-        })
-        .catch(err => console.error('Error fetching data:', err));
+        // Update sensor card
+        if (data.length > 0) {
+            const latest = data[0];
+            document.getElementById("mq6-value").textContent = latest.mq6_value;
+            document.getElementById("mq8-value").textContent = latest.mq8_value;
+        }
+    } catch (err) {
+        console.error("Gagal update chart:", err);
+    }
 }
 
 roomSelect.addEventListener("change", () => {
@@ -114,26 +114,31 @@ roomSelect.addEventListener("change", () => {
                 opt.value = device.id;
                 opt.textContent = device.name;
                 deviceSelect.appendChild(opt);
+                deviceSelect.dispatchEvent(new Event('change'));
             });
         })
         .catch(err => console.error(err));
 });
 
-deviceSelect.addEventListener("change", () => {
+deviceSelect.addEventListener("change", () => { 
+    console.log("Device changed to:", deviceSelect.value);   
     clearChart();
     if (interval) clearInterval(interval);
-
+    
     currentDeviceId = deviceSelect.value;
-
+    
     updateChart();
+    checkGasAlerts();
+    // updateCards(currentDeviceId);
 
-    // Start checking for gas alerts only after a device is selected
-    if (currentDeviceId) {
-        interval = setInterval(() => {
-            checkGasAlerts();
-        }, 5000);
-    }
+    interval = setInterval(() => {
+        Promise.allSettled([updateChart(), checkGasAlerts()]);
+        // checkGasAlerts();
+        // updateCards(currentDeviceId);
+    }, 5000);
 });
+
+window.addEventListener("resize", () => gasChart.resize());
 
 let lastPopupMessage = null;
 
@@ -156,61 +161,67 @@ function getAlertId(message) {
     return message.trim(); // Remove timestamp — use the raw message only
 }
 
-function checkGasAlerts() {
-    fetch('/api/check-gas-alerts')
-        .then(response => response.json())
-        .then(data => {
-            const { alerts, alertTriggered, mq6_value, mq8_value } = data;
-            const dismissedAlerts = JSON.parse(localStorage.getItem("dismissedAlerts")) || [];
+async function checkGasAlerts() {
+    try {
+        const res = await fetch('/api/check-gas-alerts');
+        const data = await res.json();
 
-            let existingAlerts = JSON.parse(localStorage.getItem("activePushAlerts")) || [];
-
-            if (!alertTriggered || alerts.length === 0) {
-                updatePushNotificationPanel(
-                    existingAlerts.map(msg => ({
-                        message: msg,
-                        id: getAlertId(msg)
-                    }))
-                );
-                return;
-            }
-
-            const timestamp = new Date().toLocaleString('id-ID');
-            const newAlertMessages = alerts.map(alert => `[${timestamp}] ${alert.message}`);
-
-            const undismissedNewAlerts = newAlertMessages.filter(msg => {
-                const alertId = getAlertId(msg);
-                return !dismissedAlerts.includes(alertId);
-            });
-
-            const mergedAlerts = [...new Set([...existingAlerts, ...undismissedNewAlerts])];
-
-            const cleanedAlerts = mergedAlerts.filter(msg => {
-                const alertId = getAlertId(msg);
-                return !dismissedAlerts.includes(alertId);
-            });
-
-            const activeAlerts = cleanedAlerts.map(msg => ({
-                message: msg,
-                id: getAlertId(msg)
-            }));
-
-            localStorage.setItem("activePushAlerts", JSON.stringify(cleanedAlerts));
-
-            updatePushNotificationPanel(activeAlerts);
-
-            // Only show popup if a device is selected and the alert message is new
-            if (currentDeviceId && alertTriggered && activeAlerts.length > 0 && `Propane/Butane: ${mq6_value} ppm, Hydrogen: ${mq8_value} ppm` !== lastPopupMessage) {
+        const { alerts = [], alertTriggered = false, mq6_value = 0, mq8_value = 0 } = data;
+        
+        console.log("checkGasAlerts running. Device:", currentDeviceId);
+        console.log("Alert triggered?", alertTriggered, "Popup shown?", currentDeviceId && alertTriggered && activeAlerts.length > 0);
+        fetch('/api/check-gas-alerts')
+            .then(response => response.json())
+            .then(data => {
+                const { alerts = [], alertTriggered = false, mq6_value = 0, mq8_value = 0 } = data;
+                const dismissedAlerts = JSON.parse(localStorage.getItem("dismissedAlerts")) || [];
+                let existingAlerts = JSON.parse(localStorage.getItem("activePushAlerts")) || [];
+            
+                if (!alertTriggered || alerts.length === 0) {
+                    updatePushNotificationPanel(
+                        existingAlerts.map(msg => ({
+                            message: msg,
+                            id: getAlertId(msg)
+                        }))
+                    );
+                    return;
+                }
+            
                 const timestamp = new Date().toLocaleString('id-ID');
-                alertHistory.push(`[${timestamp}] Propane/Butane: ${mq6_value} ppm, Hydrogen: ${mq8_value} ppm`);
-                localStorage.setItem("alertHistory", JSON.stringify(alertHistory));
-
-                showPopup(`Propane/Butane: ${mq6_value} ppm, Hydrogen: ${mq8_value} ppm`);
-                lastPopupMessage = `Propane/Butane: ${mq6_value} ppm, Hydrogen: ${mq8_value} ppm`;
-            }
-        })
-        .catch(error => console.error('Error checking gas level:', error));
-}
+                const newAlertMessages = alerts.map(alert => `[${timestamp}] ${alert.message}`);
+            
+                const undismissedNewAlerts = newAlertMessages.filter(msg => {
+                    const alertId = getAlertId(msg);
+                    return !dismissedAlerts.includes(alertId);
+                });
+            
+                const mergedAlerts = [...new Set([...existingAlerts, ...undismissedNewAlerts])];
+            
+                const cleanedAlerts = mergedAlerts.filter(msg => {
+                    const alertId = getAlertId(msg);
+                    return !dismissedAlerts.includes(alertId);
+                });
+            
+                const activeAlerts = cleanedAlerts.map(msg => ({
+                    message: msg,
+                    id: getAlertId(msg)
+                }));
+            
+                localStorage.setItem("activePushAlerts", JSON.stringify(cleanedAlerts));
+                updatePushNotificationPanel(activeAlerts);
+            
+                const popupMessage = `Propane/Butane: ${mq6_value} ppm, Hydrogen: ${mq8_value} ppm`;
+                if (currentDeviceId && alertTriggered && activeAlerts.length > 0 && popupMessage !== lastPopupMessage) {
+                    alertHistory.push(`[${timestamp}] ${popupMessage}`);
+                    localStorage.setItem("alertHistory", JSON.stringify(alertHistory));
+            
+                    showPopup(popupMessage);
+                    lastPopupMessage = popupMessage;
+                }
+            })
+} catch (error) {
+    console.error('Error checking gas level:', error);
+}}
 
 function updatePushNotificationPanel(alerts) {
     const badge = document.getElementById('alert-badge-count');

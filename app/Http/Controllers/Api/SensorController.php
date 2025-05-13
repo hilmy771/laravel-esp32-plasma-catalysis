@@ -65,6 +65,10 @@ class SensorController extends Controller
             $query->where('device_id', $request->device_id);
         }
 
+        if ($request->filled('since')) {
+            $query->where('created_at', '>', $request->since);
+        }
+
         // Filter tanggal
         if ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
@@ -87,9 +91,9 @@ class SensorController extends Controller
     {
         $request->validate([
             'token' => 'required|string|exists:devices,token',
-            // 'gas_value_mq4' => 'required|numeric',
-            'gas_value_mq6' => 'required|numeric',
-            'gas_value_mq8' => 'required|numeric',
+            // 'gas_value_mq4' => 'nullable|numeric',
+            'gas_value_mq6' => 'nullable|numeric',
+            'gas_value_mq8' => 'nullable|numeric',
         ]);
 
         $device = Device::where('token', $request->token)->first();
@@ -101,8 +105,8 @@ class SensorController extends Controller
         $sensorData = SensorData::create([
             'device_id' => $device->id,
             // 'mq4_value' => $request->gas_value_mq4,
-            'mq6_value' => $request->gas_value_mq6,
-            'mq8_value' => $request->gas_value_mq8,
+            'mq6_value' => $request->gas_value_mq6 ?? null,
+            'mq8_value' => $request->gas_value_mq8 ?? null,
             'created_at' => now(), // Tambahkan ini agar Laravel tidak menggunakan default '1970-01-01'
         ]);
 
