@@ -284,28 +284,26 @@ th {
 
 }
 
-.gas-popup {
+.popup {
     position: fixed;
-    top: 20px;
+    bottom: 20px;
     right: 20px;
-    z-index: 9999;
-    background: #ff4d4d;
+    background: #dc3545;
     color: white;
-    padding: 16px 24px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    font-size: 16px;
+    padding: 12px 18px;
+    border-radius: 5px;
+    z-index: 9999;
     opacity: 0;
-    transform: translateY(-20px);
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
-.gas-popup.show {
+.popup.show {
     opacity: 1;
     transform: translateY(0);
 }
-.hidden {
+.popup.hidden {
     display: none;
 }
+
 
 .logout-button {
     background-color: #c9302c; /* Warna merah */

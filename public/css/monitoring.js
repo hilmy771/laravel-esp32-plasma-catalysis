@@ -167,61 +167,55 @@ async function checkGasAlerts() {
         const data = await res.json();
 
         const { alerts = [], alertTriggered = false, mq6_value = 0, mq8_value = 0 } = data;
-        
-        console.log("checkGasAlerts running. Device:", currentDeviceId);
-        console.log("Alert triggered?", alertTriggered, "Popup shown?", currentDeviceId && alertTriggered && activeAlerts.length > 0);
-        fetch('/api/check-gas-alerts')
-            .then(response => response.json())
-            .then(data => {
-                const { alerts = [], alertTriggered = false, mq6_value = 0, mq8_value = 0 } = data;
-                const dismissedAlerts = JSON.parse(localStorage.getItem("dismissedAlerts")) || [];
-                let existingAlerts = JSON.parse(localStorage.getItem("activePushAlerts")) || [];
-            
-                if (!alertTriggered || alerts.length === 0) {
-                    updatePushNotificationPanel(
-                        existingAlerts.map(msg => ({
-                            message: msg,
-                            id: getAlertId(msg)
-                        }))
-                    );
-                    return;
-                }
-            
-                const timestamp = new Date().toLocaleString('id-ID');
-                const newAlertMessages = alerts.map(alert => `[${timestamp}] ${alert.message}`);
-            
-                const undismissedNewAlerts = newAlertMessages.filter(msg => {
-                    const alertId = getAlertId(msg);
-                    return !dismissedAlerts.includes(alertId);
-                });
-            
-                const mergedAlerts = [...new Set([...existingAlerts, ...undismissedNewAlerts])];
-            
-                const cleanedAlerts = mergedAlerts.filter(msg => {
-                    const alertId = getAlertId(msg);
-                    return !dismissedAlerts.includes(alertId);
-                });
-            
-                const activeAlerts = cleanedAlerts.map(msg => ({
+
+        const dismissedAlerts = JSON.parse(localStorage.getItem("dismissedAlerts")) || [];
+        let existingAlerts = JSON.parse(localStorage.getItem("activePushAlerts")) || [];
+
+        if (!alertTriggered || alerts.length === 0) {
+            updatePushNotificationPanel(
+                existingAlerts.map(msg => ({
                     message: msg,
                     id: getAlertId(msg)
-                }));
-            
-                localStorage.setItem("activePushAlerts", JSON.stringify(cleanedAlerts));
-                updatePushNotificationPanel(activeAlerts);
-            
-                const popupMessage = `Propane/Butane: ${mq6_value} ppm, Hydrogen: ${mq8_value} ppm`;
-                if (currentDeviceId && alertTriggered && activeAlerts.length > 0 && popupMessage !== lastPopupMessage) {
-                    alertHistory.push(`[${timestamp}] ${popupMessage}`);
-                    localStorage.setItem("alertHistory", JSON.stringify(alertHistory));
-            
-                    showPopup(popupMessage);
-                    lastPopupMessage = popupMessage;
-                }
-            })
-} catch (error) {
-    console.error('Error checking gas level:', error);
-}}
+                }))
+            );
+            return;
+        }
+
+        const timestamp = new Date().toLocaleString('id-ID');
+        const newAlertMessages = alerts.map(alert => `[${timestamp}] ${alert.message}`);
+
+        const undismissedNewAlerts = newAlertMessages.filter(msg => {
+            const alertId = getAlertId(msg);
+            return !dismissedAlerts.includes(alertId);
+        });
+
+        const mergedAlerts = [...new Set([...existingAlerts, ...undismissedNewAlerts])];
+
+        const cleanedAlerts = mergedAlerts.filter(msg => {
+            const alertId = getAlertId(msg);
+            return !dismissedAlerts.includes(alertId);
+        });
+
+        const activeAlerts = cleanedAlerts.map(msg => ({
+            message: msg,
+            id: getAlertId(msg)
+        }));
+
+        localStorage.setItem("activePushAlerts", JSON.stringify(cleanedAlerts));
+        updatePushNotificationPanel(activeAlerts);
+
+        const popupMessage = `Propane/Butane: ${mq6_value} ppm, Hydrogen: ${mq8_value} ppm`;
+        if (currentDeviceId && alertTriggered && activeAlerts.length > 0 && popupMessage !== lastPopupMessage) {
+            alertHistory.push(`[${timestamp}] ${popupMessage}`);
+            localStorage.setItem("alertHistory", JSON.stringify(alertHistory));
+
+            showPopup(popupMessage);
+            lastPopupMessage = popupMessage;
+        }
+    } catch (error) {
+        console.error('Error checking gas level:', error);
+    }
+}
 
 function updatePushNotificationPanel(alerts) {
     const badge = document.getElementById('alert-badge-count');

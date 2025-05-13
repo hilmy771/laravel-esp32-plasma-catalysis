@@ -1,5 +1,5 @@
 <!-- 🚨 Gas Popup Alert -->
-<div id="gasPopup" class="gas-popup hidden">
+<div id="gasPopup" class="popup hidden">
     <strong>🚨 Gas Alert!</strong><br>
     <span id="gasPopupMessage"></span>
 </div>
@@ -23,9 +23,8 @@
 
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
-        @auth
-            <!-- Notification Icon -->
-            <li class="nav-item dropdown" id="push-notification-dropdown">
+                    <!-- Notification Icon -->
+                    <li class="nav-item dropdown" id="push-notification-dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
                     <i class="far fa-bell"></i>
                     <span class="badge badge-danger navbar-badge" id="alert-badge-count" style="display:none;">0</span>
@@ -43,7 +42,7 @@
                     </div>
                 </div>
             </li>
-
+        @auth
             <!-- Logout Button -->
             <li class="nav-item">
                 <button class="logout-button" onclick="confirmLogout(event)">
