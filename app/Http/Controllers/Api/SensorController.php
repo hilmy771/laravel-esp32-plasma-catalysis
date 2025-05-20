@@ -126,7 +126,7 @@ class SensorController extends Controller
             $sensorValue = $sensorData->$sensor; // Gunakan $sensorData yang baru dibuat
             if ($sensorValue >= $threshold) {
                 $sensorName = $sensorNames[$sensor] ?? $sensor;
-                $alerts[] = "Gas {$sensorName} Terdeteksi.";
+                $alerts[] = "Gas {$sensorName} terdeteksi melebihi ambang batas! Segera lakukan penanganan kebocoran di laboratorium.";
             }
         }
 
@@ -153,7 +153,7 @@ class SensorController extends Controller
     }
 
     public function checkGasLevel()
-{
+    {
     $latestSensorData = SensorData::latest()->first();
     if (!$latestSensorData) {
         return response()->json(['error' => 'Tidak ada data sensor']);
@@ -172,15 +172,17 @@ class SensorController extends Controller
     $alerts = [];
     $alertTriggered = false;
 
-    foreach ($thresholds as $sensor => $threshold) {
-        $sensorValue = $latestSensorData->$sensor ?? 0;
-        if ($sensorValue >= $threshold) {
-            $sensorName = $sensorNames[$sensor] ?? $sensor;
-            $alerts[] = [
-                'message' => "Gas {$sensorName} Terdeteksi.",
-                'timestamp' => now()->toDateTimeString(),
-            ];
-            $alertTriggered = true;
+    for ($i = 0; $i < 5; $i++) {
+        foreach ($thresholds as $sensor => $threshold) {
+            $sensorValue = $latestSensorData->$sensor ?? 0;
+            if ($sensorValue >= $threshold) {
+                $sensorName = $sensorNames[$sensor] ?? $sensor;
+                $alerts[] = [
+                    'message' => "Gas {$sensorName} terdeteksi melebihi ambang batas! Segera lakukan penanganan kebocoran di laboratorium.",
+                    'timestamp' => now()->toDateTimeString(),
+                ];
+                $alertTriggered = true;
+            }
         }
     }
     
