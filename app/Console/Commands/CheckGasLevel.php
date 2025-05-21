@@ -27,8 +27,8 @@ class CheckGasLevel extends Command
 
         $thresholds = [
             // 'mq4_value' => 300,
-            'mq6_value' => 300,
-            'mq8_value' => 300
+            'mq6_value' => 20000,
+            'mq8_value' => 8000
         ];
 
         $sensorNames = [
